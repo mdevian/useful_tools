@@ -26,6 +26,16 @@ class UrlHelper
 
     private $specToRuArray;
 
+
+    /** @var  TextHelper */
+    private $textHelper;
+
+    public function __construct(TextHelper $textHelper)
+    {
+        $this->textHelper = is_null($textHelper) ? new TextHelper() : $textHelper;
+    }
+
+
     /**
      * @param $url
      *
@@ -230,4 +240,35 @@ class UrlHelper
 
         return $url;
     }
+
+
+    /**
+     * @param $url
+     *
+     * @return mixed
+     * @throws HelperException
+     */
+
+    public function prepareUrl($url)
+    {
+        $preparedUrl = null;
+        $i = 0;
+        do {
+            if ($preparedUrl) {
+                $url = $preparedUrl;
+            }
+
+            $preparedUrl = $this->textHelper->convertToUtf8(urldecode($url));
+            $i++;
+
+            if ($i > 100) {
+                throw new HelperException('Can not decode url');
+            }
+
+        } while ($preparedUrl != $url);
+
+        return $this->delHttpIfNeeded(trim($preparedUrl));
+    }
+
+
 }
