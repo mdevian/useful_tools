@@ -2,7 +2,7 @@
 
 namespace Wikimart\UsefulTools\Helper;
 
-use Wikimart\UsefulTools\HelperException;
+use Wikimart\UsefulTools\Exception\HelperException;
 
 /**
  * @author igor.lobach, viktor.safronov, oleg.emelyanov
@@ -139,8 +139,8 @@ class CsvHelper
         if (!is_callable($callback)) {
             throw new HelperException(
                 sprintf('"%s" is not a valid callable.', is_array($callback) ?
-                    sprintf('%s:%s', is_object($callback[0]) ? get_class($callback[0]) : $callback[0], $callback[1]) :
-                    (is_object($callback) ? sprintf('Object(%s)', get_class($callback)) : var_export($callback, true)))
+                        sprintf('%s:%s', is_object($callback[0]) ? get_class($callback[0]) : $callback[0], $callback[1]) :
+                        (is_object($callback) ? sprintf('Object(%s)', get_class($callback)) : var_export($callback, true)))
             );
         }
 
@@ -171,8 +171,8 @@ class CsvHelper
             }
 
             $columns = array_map(function ($item) use ($possibleFileCharset) {
-                return $this->textHelper->convertToUtf8(trim($item), $possibleFileCharset);
-            }, $columns);
+                    return $this->textHelper->convertToUtf8(trim($item), $possibleFileCharset);
+                }, $columns);
 
             if ($byTitles && !$titles) {
                 $titles = $strtolowerTitles ? array_map('strtolower', $columns) : $columns;
@@ -188,7 +188,7 @@ class CsvHelper
                 $line = $columns;
             }
 
-            call_user_func_array($callback, $line);
+            call_user_func($callback, $line);
 
             $firstLine = false;
         }

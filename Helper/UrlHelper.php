@@ -2,7 +2,7 @@
 
 namespace Wikimart\UsefulTools\Helper;
 
-use Wikimart\UsefulTools\HelperException;
+use Wikimart\UsefulTools\Exception\HelperException;
 
 /**
  * @author igor.lobach, viktor.safronov
@@ -73,13 +73,51 @@ class UrlHelper
 
 
     /**
-     * @param $url
-     *
+     * @param string $url
+     * @param bool   $filterQuery
      * @return string
      */
-    public function normalizeUrl($url)
+    public function normalizeUrl($url, $filterQuery = false)
     {
-        return $this->addHttpIfNeeded($this->encodeRu($url));
+        $originalUrl = $url;
+
+        // psaharov: without http parse_url() incorrect define host
+        $url = $this->addHttpIfNeeded($url);
+
+        $urlParams = parse_url($url);
+
+        if (!isset($urlParams['host'])) {
+            return $originalUrl;
+        }
+
+        $uri  = isset($urlParams['path']) ? $urlParams['path'] : '';
+
+        $host = trim($this->clearHost($urlParams['host']));
+        $uri  = trim($this->urldecodeFully($uri));
+
+        $uri = !empty($uri) ? preg_replace('/\/+/', '/', $uri) : '';
+
+        $query = '';
+        if (array_key_exists('query', $urlParams) && $filterQuery) {
+            $query .= '?' . $urlParams['query'];
+        }
+
+        return $host.$uri.$query;
+    }
+
+    private function urldecodeFully($string)
+    {
+        $i = 0;
+        do {
+            $originalString = $string;
+            $string = $this->textHelper->convertToUtf8(urldecode($string));
+            $i++;
+            if ($i > 100) {
+                throw new HelperException('Can not decode url');
+            }
+        } while ($string !== $originalString);
+
+        return $string;
     }
 
     /**
@@ -242,33 +280,105 @@ class UrlHelper
     }
 
 
+//    /**
+//     * @param $url
+//     *
+//     * @return mixed
+//     * @throws HelperException
+//     */
+//
+//    public function prepareUrl($url)
+//    {
+//        $preparedUrl = null;
+//        $i = 0;
+//        do {
+//            if ($preparedUrl) {
+//                $url = $preparedUrl;
+//            }
+//
+//            $preparedUrl = $this->textHelper->convertToUtf8(urldecode($url));
+//            $i++;
+//
+//            if ($i > 100) {
+//                throw new HelperException('Can not decode url');
+//            }
+//
+//        } while ($preparedUrl != $url);
+//
+//        return $this->delHttpIfNeeded(trim($preparedUrl));
+//    }
+
+
     /**
-     * @param $url
-     *
-     * @return mixed
+     * @param array $urls
+     * @param null $invalidUrl
      * @throws HelperException
      */
-
-    public function prepareUrl($url)
+    public function validateUrls(array $urls, &$invalidUrl = null)
     {
-        $preparedUrl = null;
-        $i = 0;
-        do {
-            if ($preparedUrl) {
-                $url = $preparedUrl;
+        foreach ($urls as $url) {
+            if (!$this->isUrlValid($url)) {
+                $invalidUrl = $url;
+                throw new HelperException('Invalid url found: "' . $url . '"');
             }
-
-            $preparedUrl = $this->textHelper->convertToUtf8(urldecode($url));
-            $i++;
-
-            if ($i > 100) {
-                throw new HelperException('Can not decode url');
-            }
-
-        } while ($preparedUrl != $url);
-
-        return $this->delHttpIfNeeded(trim($preparedUrl));
+        }
     }
 
+    /**
+     * @param array $urls
+     * @param array $invalidUrls
+     * @return array
+     */
+    public function getValidUrls(array $urls, &$invalidUrls = null)
+    {
+        $validUrls = array();
+        $invalidUrls = array();
+        foreach ($urls as $url) {
+            if (!$this->isUrlValid($url)) {
+                $invalidUrls[] = $url;
+                continue;
+            }
+            $validUrls[] = $url;
+        }
+        return $validUrls;
+    }
 
+    public function areUrlsValid(array $urls, &$invalidUrl = null)
+    {
+        try {
+            $this->validateUrls($urls, $invalidUrl);
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    public function validateUrl($url)
+    {
+        $this->validateUrls(array($url));
+    }
+
+    /**
+     * @param $url
+     * @return bool
+     */
+    public function isUrlValid($url)
+    {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (strpos($host, '.') === false) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function filterUrls(array $urls)
+    {
+        return array_slice(array_filter($urls, array(__CLASS__, 'isUrlValid')), 0);
+    }
 }

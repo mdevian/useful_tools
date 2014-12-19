@@ -2,7 +2,7 @@
 
 namespace Wikimart\UsefulTools\Helper;
 
-use Wikimart\UsefulTools\HelperException;
+use Wikimart\UsefulTools\Exception\HelperException;
 
 /**
  * @author igor.lobach, viktor.safronov
@@ -205,5 +205,4 @@ class FileHelper
 
         return $zipFilePath;
     }
-
 }

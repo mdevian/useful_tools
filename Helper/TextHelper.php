@@ -2,7 +2,7 @@
 
 namespace Wikimart\UsefulTools\Helper;
 
-use Wikimart\UsefulTools\HelperException;
+use Wikimart\UsefulTools\Exception\HelperException;
 
 /**
  * @author oleg.emelyanov, viktor.safronov

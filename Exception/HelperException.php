@@ -3,7 +3,7 @@
  * @author viktor.safronov
  */
 
-namespace Wikimart\UsefulTools;
+namespace Wikimart\UsefulTools\Exception;
 
 class HelperException extends \Exception
 {

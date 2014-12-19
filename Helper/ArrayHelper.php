@@ -3,7 +3,7 @@
 namespace Wikimart\UsefulTools\Helper;
 
 use Wikimart\Arrayable;
-use Wikimart\UsefulTools\HelperException;
+use Wikimart\UsefulTools\Exception\HelperException;
 
 /**
  * @author viktor.safronov
@@ -27,7 +27,16 @@ class ArrayHelper
         foreach ($array as $item) {
 
             $value = isset($valueName) ? $item[$valueName] : $item;
-            $key   = $item[$keyName];
+
+            //todo: add hook
+            //$key   = $item[$keyName];
+            if (is_array($item)) {
+                $key   = $item[$keyName];
+            } else {
+                $keymethod = 'get' . ucfirst($keyName);
+                $key   = $item->$keymethod();
+            }
+
 
             if ($isMulti) {
                 if ($multiKeyName) {
@@ -118,5 +127,11 @@ class ArrayHelper
         }
 
         return $resultArray;
+    }
+
+    public function last (&$array, $key)
+    {
+        end($array);
+        return $key === key($array);
     }
 }
